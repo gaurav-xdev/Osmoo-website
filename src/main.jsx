@@ -9,20 +9,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 function OrbScene() {
   return (
-    <div className="orb-canvas orb-fallback" aria-label="Animated OSMOO liquid-glass orb" role="img">
-      <div className="orb-aura" />
-      <div className="orb-system">
-        <div className="orb-ring orb-ring-one" />
-        <div className="orb-ring orb-ring-two" />
-        <div className="orb-ring orb-ring-three" />
-        <div className="orb-sphere">
-          <div className="orb-sheen" />
-          <div className="orb-liquid orb-liquid-one" />
-          <div className="orb-liquid orb-liquid-two" />
-          <div className="orb-highlight" />
-        </div>
-        <div className="orb-particles"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div>
-      </div>
+    <div className="orb-canvas orb-spline-wrap" aria-label="Interactive Spline Reactive Orb">
+      <iframe
+        className="orb-spline-frame"
+        src="https://app.spline.design/file/91d4ab99-592d-4b22-829c-5306e2ff9a62?view=preview"
+        title="Reactive Orb by vladkolokolnikov (Spline Community remix)"
+        loading="eager"
+        allow="autoplay; fullscreen; xr-spatial-tracking"
+        referrerPolicy="strict-origin-when-cross-origin"
+      />
     </div>
   );
 }
