@@ -9,15 +9,20 @@ gsap.registerPlugin(ScrollTrigger);
 
 function OrbScene() {
   return (
-    <div className="orb-canvas spline-orb-frame" aria-label="Interactive Spline Reactive Orb" role="img">
-      <iframe
-        title="OSMOO Reactive Orb"
-        src="https://app.spline.design/file/306ca2a5-d1ab-46ac-a27c-198575c82db0?view=preview"
-        loading="eager"
-        allow="autoplay; fullscreen; xr-spatial-tracking"
-        allowFullScreen
-        referrerPolicy="strict-origin-when-cross-origin"
-      />
+    <div className="orb-canvas orb-fallback" aria-label="Animated OSMOO liquid-glass orb" role="img">
+      <div className="orb-aura" />
+      <div className="orb-system">
+        <div className="orb-ring orb-ring-one" />
+        <div className="orb-ring orb-ring-two" />
+        <div className="orb-ring orb-ring-three" />
+        <div className="orb-sphere">
+          <div className="orb-sheen" />
+          <div className="orb-liquid orb-liquid-one" />
+          <div className="orb-liquid orb-liquid-two" />
+          <div className="orb-highlight" />
+        </div>
+        <div className="orb-particles"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div>
+      </div>
     </div>
   );
 }
