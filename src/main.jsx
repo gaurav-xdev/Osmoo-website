@@ -32,14 +32,106 @@ function OrbScene() {
     const root = new THREE.Group();
     scene.add(root);
 
-    const sphereGeometry = new THREE.SphereGeometry(1.62, 112, 112);
-    const sphereMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color('#263b2b'),
-      metalness: 0.72,
-      roughness: 0.24,
-      clearcoat: 1,
-      clearcoatRoughness: 0.18,
-      envMapIntensity: 1.25
+    const sphereGeometry = new THREE.SphereGeometry(1.62, 160, 160);
+    // Procedural liquid-glass shader: no external image or video texture required.
+    const sphereMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uPointer: { value: new THREE.Vector2(0, 0) },
+        uReducedMotion: { value: 0 }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        varying vec3 vObjectPosition;
+        uniform float uTime;
+        uniform vec2 uPointer;
+        uniform float uReducedMotion;
+
+        void main() {
+          vec3 p = position;
+          float motion = 1.0 - uReducedMotion;
+          float waveA = sin(p.y * 4.2 + uTime * 0.48) * 0.022;
+          float waveB = sin(p.x * 5.1 - p.z * 3.4 + uTime * 0.34) * 0.014;
+          float waveC = sin((p.x + p.y + p.z) * 6.0 + uTime * 0.22) * 0.009;
+          p += normal * (waveA + waveB + waveC) * motion;
+          vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
+          vNormal = normalize(normalMatrix * normal);
+          vViewPosition = -mvPosition.xyz;
+          vObjectPosition = p;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        varying vec3 vObjectPosition;
+        uniform float uTime;
+        uniform vec2 uPointer;
+        uniform float uReducedMotion;
+
+        float hash(vec3 p) {
+          p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+          p *= 17.0;
+          return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+        }
+
+        float noise(vec3 x) {
+          vec3 i = floor(x);
+          vec3 f = fract(x);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(
+            mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x),
+                mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+            mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y),
+            f.z
+          );
+        }
+
+        void main() {
+          vec3 N = normalize(vNormal);
+          vec3 V = normalize(vViewPosition);
+          float time = uTime * (1.0 - uReducedMotion);
+          vec3 p = normalize(vObjectPosition);
+          float flow = noise(p * 5.2 + vec3(time * 0.12, -time * 0.17, time * 0.09));
+          float ribbons = sin((p.x * 3.4 + p.y * 2.1 - p.z * 3.0 + flow * 1.8) * 3.0 + time * 0.26);
+          float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.15);
+          float edge = smoothstep(0.08, 0.94, fresnel);
+          float liquid = smoothstep(-0.25, 0.92, ribbons * 0.42 + flow * 0.8);
+
+          vec3 deepForest = vec3(0.025, 0.075, 0.046);
+          vec3 greenGlass = vec3(0.10, 0.25, 0.14);
+          vec3 mintGlass = vec3(0.43, 0.67, 0.47);
+          vec3 pearl = vec3(0.88, 0.91, 0.78);
+          vec3 spectral = vec3(
+            0.48 + 0.36 * sin(fresnel * 7.0 + 0.2),
+            0.58 + 0.30 * sin(fresnel * 7.0 + 2.2),
+            0.48 + 0.38 * sin(fresnel * 7.0 + 4.1)
+          );
+
+          vec3 color = mix(deepForest, greenGlass, smoothstep(0.08, 0.9, liquid));
+          color = mix(color, mintGlass, smoothstep(0.48, 0.92, flow) * 0.42);
+          color = mix(color, spectral, edge * 0.68);
+          color = mix(color, pearl, smoothstep(0.77, 0.99, edge) * 0.74);
+
+          vec3 keyLight = normalize(vec3(-0.52, 0.72, 0.66));
+          vec3 fillLight = normalize(vec3(0.68, -0.2, 0.55));
+          float specular = pow(max(dot(reflect(-keyLight, N), V), 0.0), 52.0);
+          float broadHighlight = pow(max(dot(N, keyLight), 0.0), 5.0);
+          float fillHighlight = pow(max(dot(N, fillLight), 0.0), 10.0);
+          float streak = smoothstep(0.76, 0.99, sin((p.x * 1.2 + p.y * 0.8 + p.z * 0.6) * 8.0 + flow * 3.0 + time * 0.18));
+          color += pearl * specular * 1.2;
+          color += mintGlass * broadHighlight * 0.26;
+          color += vec3(0.36, 0.62, 0.40) * fillHighlight * 0.5;
+          color += pearl * streak * edge * 0.18;
+          color *= 0.94 + 0.06 * sin(p.y * 3.0 + time * 0.2);
+
+          gl_FragColor = vec4(color, 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }
+      `
     });
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     root.add(sphere);
@@ -112,6 +204,9 @@ function OrbScene() {
       frame = requestAnimationFrame(render);
       const t = clock.getElapsedTime();
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      sphereMaterial.uniforms.uTime.value = t;
+      sphereMaterial.uniforms.uPointer.value.set(pointer.current.x, pointer.current.y);
+      sphereMaterial.uniforms.uReducedMotion.value = reduced ? 1 : 0;
       const progress = scrollProgress.current;
       root.rotation.y += ((pointer.current.x * 0.12 + t * (reduced ? 0.015 : 0.055)) - root.rotation.y) * 0.025;
       root.rotation.x += ((-pointer.current.y * 0.07 + Math.sin(t * 0.25) * 0.035) - root.rotation.x) * 0.025;
@@ -133,6 +228,13 @@ function OrbScene() {
       window.removeEventListener('scroll', onScroll);
       sphereGeometry.dispose();
       sphereMaterial.dispose();
+      shell.geometry.dispose();
+      shell.material.dispose();
+      ringOne.geometry.dispose();
+      ringOne.material.dispose();
+      ringTwo.geometry.dispose();
+      ringTwo.material.dispose();
+      stars.material.dispose();
       ringMaterial.dispose();
       specks.dispose();
       renderer.dispose();
