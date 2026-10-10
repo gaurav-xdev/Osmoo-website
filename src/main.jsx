@@ -63,6 +63,8 @@ function OrbScene() {
         }
       `,
       fragmentShader: `
+        #include <tonemapping_pars_fragment>
+        #include <colorspace_pars_fragment>
         varying vec3 vNormal;
         varying vec3 vViewPosition;
         varying vec3 vObjectPosition;
