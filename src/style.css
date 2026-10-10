@@ -50,6 +50,7 @@ button { font: inherit; }
 .hero-orb-stage { position: absolute; z-index: -1; inset: -5% 0 0; pointer-events: none; }
 .orb-canvas { width: 100%; height: 100%; }
 .orb-canvas canvas { display: block; width: 100%; height: 100%; }
+.spline-orb-frame iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
 .hero-orbit-caption { position: absolute; top: 19%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; gap: 12px; white-space: nowrap; color: var(--olive); font: 9px var(--mono); letter-spacing: .11em; }
 .caption-dot { display: inline-block; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: var(--forest); box-shadow: 0 0 0 4px rgba(37,52,39,.08); }
 .caption-line { width: 30px; height: 1px; background: rgba(37,52,39,.35); }
